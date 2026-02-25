@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Composting Quiz</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px;
+  color: #333;
+}
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.header {
+  text-align: center;
+  color: #fff;
+  padding: 30px 20px;
+}
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+.header .meta {
+  font-size: 14px;
+  opacity: 0.9;
+}
+.progress-bar {
+  background: rgba(255,255,255,0.3);
+  border-radius: 10px;
+  height: 8px;
+  margin: 20px 0;
+  overflow: hidden;
+}
+.progress-fill {
+  background: #fff;
+  height: 100%;
+  width: 0%;
+  transition: width 0.4s ease;
+  border-radius: 10px;
+}
+.question {
+  background: #fff;
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  display: none;
+}
+.question.active { display: block; }
+.q-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #888;
+}
+.q-number { font-weight: 600; color: #667eea; }
+.q-text {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin-bottom: 25px;
+  color: #222;
+}
+.options { display: flex; flex-direction: column; gap: 12px; }
+.option {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 2px solid #e8e8e8;
+  border-radius: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-size: 15px;
+  width: 100%;
+}
+.option:hover:not(.disabled) {
+  border-color: #667eea;
+  background: #f5f3ff;
+}
+.option.selected {
+  border-color: #667eea;
+  background: #ede9fe;
+}
+.option.correct {
+  border-color: #22c55e;
+  background: #dcfce7;
+}
+.option.incorrect {
+  border-color: #ef4444;
+  background: #fee2e2;
+}
+.option.disabled { cursor: default; opacity: 0.7; }
+.option.show-correct {
+  border-color: #22c55e;
+  background: #dcfce7;
+  opacity: 1;
+}
+.opt-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e8e8e8;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.option.selected .opt-label { background: #667eea; color: #fff; }
+.option.correct .opt-label { background: #22c55e; color: #fff; }
+.option.incorrect .opt-label { background: #ef4444; color: #fff; }
+.opt-text { padding-top: 5px; line-height: 1.5; }
+.feedback {
+  margin-top: 20px;
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.feedback.correct { background: #dcfce7; color: #166534; }
+.feedback.incorrect { background: #fee2e2; color: #991b1b; }
+.feedback strong { display: block; margin-bottom: 6px; font-size: 15px; }
+.next-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.next-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+.hidden { display: none !important; }
+.results {
+  background: #fff;
+  border-radius: 16px;
+  padding: 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  display: none;
+}
+.results.active { display: block; }
+.results h2 { font-size: 28px; margin-bottom: 10px; color: #333; }
+.results .score { font-size: 64px; font-weight: 700; color: #667eea; margin: 20px 0; }
+.results .score-text { font-size: 18px; color: #666; margin-bottom: 30px; }
+.restart-btn {
+  padding: 14px 40px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Math CSS */
+.math, .math-block { font-family: "Times New Roman", Times, serif; font-style: italic; }
+.math-block { display: block; text-align: center; margin: 10px 0; font-size: 110%; }
+.frac { 
+  display: inline-flex; 
+  flex-direction: column; 
+  align-items: center; 
+  vertical-align: middle; 
+  margin: 0 3px;
+  font-size: 0.9em;
+}
+.frac-num { 
+  border-bottom: 1px solid currentColor; 
+  padding: 0 4px 2px; 
+  line-height: 1.2;
+}
+.frac-den { 
+  padding: 2px 4px 0; 
+  line-height: 1.2;
+}
+.sqrt { white-space: nowrap; }
+.sqrt-content { 
+  border-top: 1px solid currentColor; 
+  padding: 0 3px;
+  margin-left: 2px;
+}
+sup, sub { font-size: 0.75em; }
+sup { vertical-align: super; }
+sub { vertical-align: sub; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Composting Quiz</h1>
+    <div class="meta">10 questions</div>
+    <div class="progress-bar"><div class="progress-fill"></div></div>
+  </div>
+  
+  <div id="quiz-container">
+    
+        <div class="question" data-index="0">
+          <div class="q-header">
+            <span class="q-number">Question 1</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">Which of the following items is appropriate to place in the LILA front lid for crushing?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Large, hard pits require the mechanical force of the crusher to break down effectively for the composting cycle.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Avocado pits</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="Dense mammal bones like beef or pork are too hard for the internal blades and may cause mechanical damage.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Beef rib bones</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="While seafood-based, thick calcified shells are specifically listed as items to avoid in the crushing chamber.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Clam shells</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="Long, fibrous materials should be cut into smaller pieces and placed in the back lid to avoid wrapping around the motor shaft.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Grape vines</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="1">
+          <div class="q-header">
+            <span class="q-number">Question 2</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">What is the recommended action when disposing of leftover chunky soup into the LILA composter?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Excess moisture (above $70\%$) can lead to a pasty consistency, potential leaks, and unpleasant odors.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Drain all liquids before adding the solid scraps to the back lid.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="The front lid is intended for dry, hard items, and adding liquids here would interfere with the crushing mechanism.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Pour the entire contents into the front lid to ensure thorough mixing.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="Adding frozen items can disrupt the temperature and microbial activity required for the composting process.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Freeze the soup into cubes first to reduce immediate moisture levels.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="Starter soil is meant to introduce microbes, not to act as a primary absorbent for significant amounts of liquid waste.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Mix it with 1 full bag of starter soil to absorb the liquid.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="2">
+          <div class="q-header">
+            <span class="q-number">Question 3</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">According to the 'sourdough starter' analogy provided in the training, how much material should be removed from a mature compost chamber?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Leaving a portion of the finished compost ensures a healthy population of microbes remains to 'innoculate' the next batch of scraps.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Approximately <span class="math"><span class="frac"><span class="frac-num">3</span><span class="frac-den">4</span></span></span> of the compost</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="Removing everything requires the use of a new starter bag every time, which is unnecessary for a continuous cycle.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">All of the compost to ensure a fresh start</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="While leaving material is good, removing only half would fill the machine back to capacity too quickly for new waste.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Exactly half of the compost</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="Chambers should be managed individually to allow one to mature while the other is being filled.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">None, until both chambers are <span class="math">100\%</span> full</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="3">
+          <div class="q-header">
+            <span class="q-number">Question 4</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">What does a solid green LED light indicate on the LILA unit?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Solid green is the standard status indicator that all lids are closed and the machine is powered on.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">The machine is set up correctly and ready for use.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="Active crushing is typically indicated by a blinking red light and a partial solid green light.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">The crushing cycle is currently active.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="An improperly closed lid or sensor issue is usually signaled by a white light or a flashing blue light.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">A lid is open or not seated properly.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="The machine uses appearance and moisture cues rather than a specific LED color to signal final compost maturity.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">The compost in the active chamber is finished.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="4">
+          <div class="q-header">
+            <span class="q-number">Question 5</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">At what capacity should you rotate the hopper to begin filling the second chamber?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Switching at this level prevents overfilling and allows enough space for the material to be agitated and aerated during maturation.">
+          <span class="opt-label">A</span>
+          <span class="opt-text"><span class="math">70\%</span> full</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="Filling to the very top can cause jams or prevent the lid sensors from recognizing that the unit is safely closed.">
+          <span class="opt-label">B</span>
+          <span class="opt-text"><span class="math">100\%</span> full</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="Switching too early does not allow for efficient batch processing and underutilizes the chamber's capacity.">
+          <span class="opt-label">C</span>
+          <span class="opt-text"><span class="math">25\%</span> full</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="Rotation is based on the volume of scraps processed, which varies depending on the household size.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Once per week, regardless of volume</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="5">
+          <div class="q-header">
+            <span class="q-number">Question 6</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">How should long fibers, such as corn husks or celery stalks, be prepared before being placed in the back lid?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Shortening long fibers prevents them from tangling around the internal rotating shaft, which can cause motor jams.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Cut them into smaller pieces, approximately <span class="math">1</span> inch in size.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="The front lid crusher is designed for hard, brittle items rather than stringy, flexible fibers that can wrap around blades.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Place them in the front lid to be pulverized.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="Adding extra moisture is generally discouraged as it can lead to odor issues and soggy compost.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Soak them in water to soften the fibers first.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="While microbes digest them, the physical structure of long fibers poses a mechanical risk to the machine's operation.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">No preparation is needed as the microbes will digest them.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="6">
+          <div class="q-header">
+            <span class="q-number">Question 7</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">True or False: Pet waste and cat litter are acceptable inputs for LILA because they are organic materials.</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Pet waste can introduce pathogens that the machine is not designed to sanitize, and litter can cause mechanical issues or odor.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">False</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="The source materials specifically list pet waste as a prohibited item to ensure compost safety and machine longevity.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">True</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="7">
+          <div class="q-header">
+            <span class="q-number">Question 8</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">To activate the crushing cycle in the front lid, within what timeframe must the lid be closed after opening?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="This specific window is a safety feature that ensures the user has finished adding waste but is still present when the cycle begins.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Between <span class="math">2</span> and <span class="math">30</span> seconds</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="Closing the lid too quickly causes the machine to assume no waste was added, and it will not trigger the crusher.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Immediately (under <span class="math">2</span> seconds)</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="Leaving the lid open for too long is a safety hazard and will not initiate the automated crushing sequence.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Exactly <span class="math">60</span> seconds</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="The blades are programmed to stop for safety when the lid is opened, preventing injury while adding waste.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">The crusher runs continuously while the lid is open.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="8">
+          <div class="q-header">
+            <span class="q-number">Question 9</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">If LILA begins to produce a bad smell after <span class="math">6</span> months of use, what is the most likely maintenance requirement?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Filters have a limited lifespan based on the volume of odors they absorb and typically need replacement after about half a year.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">Replacing the internal filters</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="Smell issues are usually related to filtration or moisture balance rather than a lack of initial microbes.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">Adding a third starter bag to the chamber</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="Increasing moisture often exacerbates odor problems by encouraging anaerobic decomposition.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">Increasing the moisture content above <span class="math">70\%</span></span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="Odor is a physical maintenance issue involving air filtration, not a software calibration error.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">Resubmitting the machine for a factory AI reset</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+        <div class="question" data-index="9">
+          <div class="q-header">
+            <span class="q-number">Question 10</span>
+            <span class="q-of">of 10</span>
+          </div>
+          <div class="q-text">Why is it important to rinse the grinding chamber (crusher) regularly, especially after processing wet fruit?</div>
+          <div class="options">
+        <button class="option" data-label="A" data-correct="true" data-rationale="Sugary and wet scraps leave a film that can attract bacteria or harden, interfering with the next use of the crusher.">
+          <span class="opt-label">A</span>
+          <span class="opt-text">To prevent sugary residue from building up and causing odors or sticky jams.</span>
+        </button>
+      
+        <button class="option" data-label="B" data-correct="false" data-rationale="Water pressure from a sink is insufficient to sharpen metal blades; rinsing is purely for hygiene and mechanical cleanliness.">
+          <span class="opt-label">B</span>
+          <span class="opt-text">To sharpen the blades using the water pressure.</span>
+        </button>
+      
+        <button class="option" data-label="C" data-correct="false" data-rationale="The crusher should be rinsed in the sink, not while it is inside the machine, to avoid adding uncontrolled water to the compost.">
+          <span class="opt-label">C</span>
+          <span class="opt-text">To add necessary moisture to the compost chamber below.</span>
+        </button>
+      
+        <button class="option" data-label="D" data-correct="false" data-rationale="The motor is protected by internal cooling; rinsing the chamber targets debris removal rather than thermal management.">
+          <span class="opt-label">D</span>
+          <span class="opt-text">To cool down the motor after a heavy crushing cycle.</span>
+        </button>
+      </div>
+          <div class="feedback hidden"></div>
+          <button class="next-btn hidden">Next Question →</button>
+        </div>
+      
+  </div>
+  
+  <div class="results" id="results">
+    <h2>Quiz Complete!</h2>
+    <div class="score" id="score">0%</div>
+    <div class="score-text" id="score-text">You got 0 out of 10 correct</div>
+    <button class="restart-btn" onclick="restart()">Try Again</button>
+  </div>
+</div>
+
+<script>
+const quizData = [{"question":"Which of the following items is appropriate to place in the LILA front lid for crushing?","options":[{"label":"A","text":"Avocado pits","isCorrect":true,"rationale":"Large, hard pits require the mechanical force of the crusher to break down effectively for the composting cycle."},{"label":"B","text":"Beef rib bones","isCorrect":false,"rationale":"Dense mammal bones like beef or pork are too hard for the internal blades and may cause mechanical damage."},{"label":"C","text":"Clam shells","isCorrect":false,"rationale":"While seafood-based, thick calcified shells are specifically listed as items to avoid in the crushing chamber."},{"label":"D","text":"Grape vines","isCorrect":false,"rationale":"Long, fibrous materials should be cut into smaller pieces and placed in the back lid to avoid wrapping around the motor shaft."}]},{"question":"What is the recommended action when disposing of leftover chunky soup into the LILA composter?","options":[{"label":"A","text":"Drain all liquids before adding the solid scraps to the back lid.","isCorrect":true,"rationale":"Excess moisture (above $70\\%$) can lead to a pasty consistency, potential leaks, and unpleasant odors."},{"label":"B","text":"Pour the entire contents into the front lid to ensure thorough mixing.","isCorrect":false,"rationale":"The front lid is intended for dry, hard items, and adding liquids here would interfere with the crushing mechanism."},{"label":"C","text":"Freeze the soup into cubes first to reduce immediate moisture levels.","isCorrect":false,"rationale":"Adding frozen items can disrupt the temperature and microbial activity required for the composting process."},{"label":"D","text":"Mix it with 1 full bag of starter soil to absorb the liquid.","isCorrect":false,"rationale":"Starter soil is meant to introduce microbes, not to act as a primary absorbent for significant amounts of liquid waste."}]},{"question":"According to the 'sourdough starter' analogy provided in the training, how much material should be removed from a mature compost chamber?","options":[{"label":"A","text":"Approximately $\\frac{3}{4}$ of the compost","isCorrect":true,"rationale":"Leaving a portion of the finished compost ensures a healthy population of microbes remains to 'innoculate' the next batch of scraps."},{"label":"B","text":"All of the compost to ensure a fresh start","isCorrect":false,"rationale":"Removing everything requires the use of a new starter bag every time, which is unnecessary for a continuous cycle."},{"label":"C","text":"Exactly half of the compost","isCorrect":false,"rationale":"While leaving material is good, removing only half would fill the machine back to capacity too quickly for new waste."},{"label":"D","text":"None, until both chambers are $100\\%$ full","isCorrect":false,"rationale":"Chambers should be managed individually to allow one to mature while the other is being filled."}]},{"question":"What does a solid green LED light indicate on the LILA unit?","options":[{"label":"A","text":"The machine is set up correctly and ready for use.","isCorrect":true,"rationale":"Solid green is the standard status indicator that all lids are closed and the machine is powered on."},{"label":"B","text":"The crushing cycle is currently active.","isCorrect":false,"rationale":"Active crushing is typically indicated by a blinking red light and a partial solid green light."},{"label":"C","text":"A lid is open or not seated properly.","isCorrect":false,"rationale":"An improperly closed lid or sensor issue is usually signaled by a white light or a flashing blue light."},{"label":"D","text":"The compost in the active chamber is finished.","isCorrect":false,"rationale":"The machine uses appearance and moisture cues rather than a specific LED color to signal final compost maturity."}]},{"question":"At what capacity should you rotate the hopper to begin filling the second chamber?","options":[{"label":"A","text":"$70\\%$ full","isCorrect":true,"rationale":"Switching at this level prevents overfilling and allows enough space for the material to be agitated and aerated during maturation."},{"label":"B","text":"$100\\%$ full","isCorrect":false,"rationale":"Filling to the very top can cause jams or prevent the lid sensors from recognizing that the unit is safely closed."},{"label":"C","text":"$25\\%$ full","isCorrect":false,"rationale":"Switching too early does not allow for efficient batch processing and underutilizes the chamber's capacity."},{"label":"D","text":"Once per week, regardless of volume","isCorrect":false,"rationale":"Rotation is based on the volume of scraps processed, which varies depending on the household size."}]},{"question":"How should long fibers, such as corn husks or celery stalks, be prepared before being placed in the back lid?","options":[{"label":"A","text":"Cut them into smaller pieces, approximately $1$ inch in size.","isCorrect":true,"rationale":"Shortening long fibers prevents them from tangling around the internal rotating shaft, which can cause motor jams."},{"label":"B","text":"Place them in the front lid to be pulverized.","isCorrect":false,"rationale":"The front lid crusher is designed for hard, brittle items rather than stringy, flexible fibers that can wrap around blades."},{"label":"C","text":"Soak them in water to soften the fibers first.","isCorrect":false,"rationale":"Adding extra moisture is generally discouraged as it can lead to odor issues and soggy compost."},{"label":"D","text":"No preparation is needed as the microbes will digest them.","isCorrect":false,"rationale":"While microbes digest them, the physical structure of long fibers poses a mechanical risk to the machine's operation."}]},{"question":"True or False: Pet waste and cat litter are acceptable inputs for LILA because they are organic materials.","options":[{"label":"A","text":"False","isCorrect":true,"rationale":"Pet waste can introduce pathogens that the machine is not designed to sanitize, and litter can cause mechanical issues or odor."},{"label":"B","text":"True","isCorrect":false,"rationale":"The source materials specifically list pet waste as a prohibited item to ensure compost safety and machine longevity."}]},{"question":"To activate the crushing cycle in the front lid, within what timeframe must the lid be closed after opening?","options":[{"label":"A","text":"Between $2$ and $30$ seconds","isCorrect":true,"rationale":"This specific window is a safety feature that ensures the user has finished adding waste but is still present when the cycle begins."},{"label":"B","text":"Immediately (under $2$ seconds)","isCorrect":false,"rationale":"Closing the lid too quickly causes the machine to assume no waste was added, and it will not trigger the crusher."},{"label":"C","text":"Exactly $60$ seconds","isCorrect":false,"rationale":"Leaving the lid open for too long is a safety hazard and will not initiate the automated crushing sequence."},{"label":"D","text":"The crusher runs continuously while the lid is open.","isCorrect":false,"rationale":"The blades are programmed to stop for safety when the lid is opened, preventing injury while adding waste."}]},{"question":"If LILA begins to produce a bad smell after $6$ months of use, what is the most likely maintenance requirement?","options":[{"label":"A","text":"Replacing the internal filters","isCorrect":true,"rationale":"Filters have a limited lifespan based on the volume of odors they absorb and typically need replacement after about half a year."},{"label":"B","text":"Adding a third starter bag to the chamber","isCorrect":false,"rationale":"Smell issues are usually related to filtration or moisture balance rather than a lack of initial microbes."},{"label":"C","text":"Increasing the moisture content above $70\\%$","isCorrect":false,"rationale":"Increasing moisture often exacerbates odor problems by encouraging anaerobic decomposition."},{"label":"D","text":"Resubmitting the machine for a factory AI reset","isCorrect":false,"rationale":"Odor is a physical maintenance issue involving air filtration, not a software calibration error."}]},{"question":"Why is it important to rinse the grinding chamber (crusher) regularly, especially after processing wet fruit?","options":[{"label":"A","text":"To prevent sugary residue from building up and causing odors or sticky jams.","isCorrect":true,"rationale":"Sugary and wet scraps leave a film that can attract bacteria or harden, interfering with the next use of the crusher."},{"label":"B","text":"To sharpen the blades using the water pressure.","isCorrect":false,"rationale":"Water pressure from a sink is insufficient to sharpen metal blades; rinsing is purely for hygiene and mechanical cleanliness."},{"label":"C","text":"To add necessary moisture to the compost chamber below.","isCorrect":false,"rationale":"The crusher should be rinsed in the sink, not while it is inside the machine, to avoid adding uncontrolled water to the compost."},{"label":"D","text":"To cool down the motor after a heavy crushing cycle.","isCorrect":false,"rationale":"The motor is protected by internal cooling; rinsing the chamber targets debris removal rather than thermal management."}]}];
+let currentQ = 0;
+let correctCount = 0;
+let answered = false;
+
+function init() {
+  document.querySelectorAll('.question').forEach((q, i) => {
+    q.classList.toggle('active', i === 0);
+  });
+  updateProgress();
+  
+  document.querySelectorAll('.option').forEach(opt => {
+    opt.addEventListener('click', () => selectOption(opt));
+  });
+  
+  document.querySelectorAll('.next-btn').forEach(btn => {
+    btn.addEventListener('click', nextQuestion);
+  });
+}
+
+function selectOption(opt) {
+  if (answered) return;
+  answered = true;
+  
+  const q = opt.closest('.question');
+  const options = q.querySelectorAll('.option');
+  const feedback = q.querySelector('.feedback');
+  const nextBtn = q.querySelector('.next-btn');
+  const isCorrect = opt.dataset.correct === 'true';
+  const rationale = opt.dataset.rationale;
+  
+  options.forEach(o => {
+    o.classList.add('disabled');
+    if (o.dataset.correct === 'true') o.classList.add('show-correct');
+  });
+  
+  opt.classList.add('selected');
+  opt.classList.add(isCorrect ? 'correct' : 'incorrect');
+  
+  if (isCorrect) {
+    correctCount++;
+    feedback.className = 'feedback correct';
+    feedback.innerHTML = '<strong>✓ Correct!</strong>' + (rationale ? rationale : '');
+  } else {
+    feedback.className = 'feedback incorrect';
+    const correctOpt = [...options].find(o => o.dataset.correct === 'true');
+    const correctRationale = correctOpt ? correctOpt.dataset.rationale : '';
+    feedback.innerHTML = '<strong>✗ Incorrect</strong>' + (correctRationale ? correctRationale : '');
+  }
+  
+  nextBtn.classList.remove('hidden');
+  if (currentQ === quizData.length - 1) {
+    nextBtn.textContent = 'See Results';
+  }
+}
+
+function nextQuestion() {
+  answered = false;
+  currentQ++;
+  
+  if (currentQ >= quizData.length) {
+    showResults();
+    return;
+  }
+  
+  document.querySelectorAll('.question').forEach((q, i) => {
+    q.classList.toggle('active', i === currentQ);
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  const pct = ((currentQ) / quizData.length) * 100;
+  document.querySelector('.progress-fill').style.width = pct + '%';
+}
+
+function showResults() {
+  document.querySelectorAll('.question').forEach(q => q.classList.remove('active'));
+  const results = document.getElementById('results');
+  results.classList.add('active');
+  
+  const pct = Math.round((correctCount / quizData.length) * 100);
+  document.getElementById('score').textContent = pct + '%';
+  document.getElementById('score-text').textContent = 'You got ' + correctCount + ' out of ' + quizData.length + ' correct';
+  
+  document.querySelector('.progress-fill').style.width = '100%';
+}
+
+function restart() {
+  currentQ = 0;
+  correctCount = 0;
+  answered = false;
+  
+  document.getElementById('results').classList.remove('active');
+  
+  document.querySelectorAll('.question').forEach((q, i) => {
+    q.classList.toggle('active', i === 0);
+    q.querySelectorAll('.option').forEach(o => {
+      o.classList.remove('selected', 'correct', 'incorrect', 'disabled', 'show-correct');
+    });
+    q.querySelector('.feedback').className = 'feedback hidden';
+    q.querySelector('.next-btn').classList.add('hidden');
+    q.querySelector('.next-btn').textContent = 'Next Question →';
+  });
+  
+  updateProgress();
+}
+
+init();
+</script>
+</body>
+</html>
